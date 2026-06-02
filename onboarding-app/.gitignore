@@ -1,0 +1,26 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Function secrets — never commit
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# npm is the authoritative package manager — no Bun lockfile
+bun.lockb
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Wrangler
+.wrangler
+
+# Supabase local CLI state
+supabase/.temp
+supabase/.branches

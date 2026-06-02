@@ -1,0 +1,5 @@
+{
+  "// Use the workspace TypeScript (node_modules/typescript), not VS Code's bundled": "version. The bundled TS may be < 5.8 and would flag valid 5.8+ options like erasableSyntaxOnly as 'unknown compiler option'.",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

@@ -1,0 +1,4 @@
+# Copy to .dev.vars (gitignored) for `wrangler pages dev`.
+# These are read by the edge functions only — never bundled into the frontend.
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
