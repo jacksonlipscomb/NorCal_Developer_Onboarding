@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Pencil, Trash2, Check } from "lucide-react";
+import { Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EditStepDialog } from "@/components/EditStepDialog";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/data/types";
@@ -19,7 +18,6 @@ export function StepCard({
   completed,
   onToggleComplete,
 }: StepCardProps) {
-  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -74,14 +72,6 @@ export function StepCard({
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Edit step: ${step.title}`}
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
             aria-label={`Delete step: ${step.title}`}
             onClick={() => setDeleteOpen(true)}
           >
@@ -90,7 +80,6 @@ export function StepCard({
         </div>
       </div>
 
-      <EditStepDialog step={step} open={editOpen} onOpenChange={setEditOpen} />
       <ConfirmDeleteDialog
         step={step}
         open={deleteOpen}
