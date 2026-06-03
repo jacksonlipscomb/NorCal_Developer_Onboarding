@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* NorCal Crew brand palette (matches norcalcrew.org): gold bear on black,
+   light-gray content background. */
+@theme {
+  --color-norcal-gold: #f9c011;
+  --color-norcal-gold-dark: #e0a800;
+  --color-norcal-black: #0b0b0b;
+  --color-norcal-gray: #e9ebf0;
+}
+
 :root {
   color-scheme: light;
 }
@@ -7,9 +16,15 @@
 body {
   margin: 0;
   font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  background-color: #f8fafc; /* slate-50 */
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  background-color: #e9ebf0; /* norcal-gray */
   color: #0f172a; /* slate-900 */
 }
 
