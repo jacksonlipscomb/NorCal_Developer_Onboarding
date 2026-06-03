@@ -18,8 +18,11 @@ hard-deleted).
 There is **no app-level login**. The data boundary is the service-role key, used only
 server-side. RLS is enabled with no policies and `anon`/`authenticated` are revoked, so the
 public anon key reaches nothing. Because the mutation endpoints are otherwise open to anyone
-who reaches the URL, **Cloudflare Access is a required network gate before the URL is
-shared** (see [Deploy](#4-deploy)).
+who reaches the URL, the site is gated by **HTTP Basic Auth in a Pages Functions middleware**
+([`functions/_middleware.ts`](functions/_middleware.ts)) — a shared `user:password` credential
+stored as the encrypted `SITE_BASIC_AUTH` secret. The middleware runs on every request (page
+and API) and **fails closed**: if the secret is unset, every request gets `401`. Cloudflare
+Access (per-user email OTP) remains an optional future upgrade.
 
 ## API
 
@@ -103,26 +106,26 @@ destructive. The seed is idempotent (it only loads when the table is empty), so
    ```bash
    npm run pages:deploy   # vite build && wrangler pages deploy dist --project-name norcal-onboarding
    ```
-2. In the Cloudflare Pages project settings, add the function secrets as **encrypted
-   environment variables**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+2. In the Cloudflare Pages project settings, add **three** encrypted environment variables
+   (Production): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SITE_BASIC_AUTH`.
 
-### Required gate before sharing the URL — Cloudflare Access
+### Required gate before sharing the URL — Basic Auth
 
-The production URL **must not be shared** until Cloudflare Access protects every hostname.
-Use the Pages-specific procedure (a single self-hosted app does not correctly cover
-`*.pages.dev`):
+The production URL **must not be shared** until the gate is live. The gate is the
+[`functions/_middleware.ts`](functions/_middleware.ts) Basic Auth check, driven by the
+`SITE_BASIC_AUTH` secret in `user:password` form (e.g. `norcal:a-strong-password`).
 
-1. In the Pages project, **enable the preview-deployments Access policy** (generates an
-   Access application/policy).
-2. **Modify the generated policy** to protect production `<project>.pages.dev`.
-3. **Re-enable preview protection** to create the `*.<project>.pages.dev` (preview) policy.
-4. Add a **separate self-hosted Access application** only if a custom domain is mapped.
+- Set `SITE_BASIC_AUTH` as an **encrypted** variable, then **redeploy** so the middleware
+  picks it up.
+- It gates the whole site (page + API). Visitors get a browser username/password prompt;
+  the SPA's API calls reuse the credentials automatically.
+- **Fail-closed:** if `SITE_BASIC_AUTH` is unset, every request returns `401` — the site can
+  never accidentally ship open. (Verify by deploying before setting the secret: the site is
+  locked.)
+- Rotate by editing `SITE_BASIC_AUTH` and redeploying. Distribute the password out of band.
 
-Allow method: start with an **email one-time-PIN allow-list** of NorCal addresses (no Google
-Workspace dependency), then upgrade to NorCal Google Workspace identities once an admin can
-wire up the IdP. No app-code changes either way.
-
-Ref: https://developers.cloudflare.com/pages/platform/known-issues/#enable-access-on-your-pagesdev-domain
+Optional future upgrade: Cloudflare Access (per-user email OTP / Google Workspace IdP) for
+per-user identity. It requires a Zero Trust org; Basic Auth needs no extra account.
 
 ### Backups
 
@@ -134,7 +137,8 @@ tier, add a periodic off-site `supabase db dump`.
 
 ```
 functions/
-  _lib/        env, supabase client, JSON/validation/respond helpers (+ unit tests)
+  _middleware.ts    site-wide Basic Auth gate (runs on every request)
+  _lib/        env, supabase client, auth, JSON/validation/respond helpers (+ unit tests)
   api/
     steps.ts        GET + POST (+ 405 fallback)
     steps/[id].ts   PATCH + DELETE (+ 405 fallback)

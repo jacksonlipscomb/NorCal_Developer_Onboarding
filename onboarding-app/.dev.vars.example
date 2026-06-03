@@ -2,3 +2,6 @@
 # These are read by the edge functions only — never bundled into the frontend.
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Shared Basic Auth gate, "user:password". Unset = site fails closed (401).
+SITE_BASIC_AUTH=norcal:choose-a-strong-password

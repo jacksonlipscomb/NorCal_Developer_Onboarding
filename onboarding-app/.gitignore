@@ -24,3 +24,6 @@ bun.lockb
 # Supabase local CLI state
 supabase/.temp
 supabase/.branches
+
+# Off-site DB dumps (data) — not committed
+backups/

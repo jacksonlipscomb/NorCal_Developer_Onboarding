@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { StepCard } from "@/components/StepCard";
 import { AddStepDialog } from "@/components/AddStepDialog";
+import { useCompletedSteps } from "@/hooks/useCompletedSteps";
 import { listSteps } from "@/lib/api";
 
 export default function App() {
@@ -13,6 +14,9 @@ export default function App() {
     refetch,
   } = useQuery({ queryKey: ["steps"], queryFn: listSteps });
 
+  const { completed, toggle } = useCompletedSteps();
+  const doneCount = steps?.filter((s) => completed.has(s.id)).length ?? 0;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -22,6 +26,11 @@ export default function App() {
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Follow these steps to get set up.
+            {steps && steps.length > 0 && (
+              <span className="ml-1 font-medium text-slate-600">
+                {doneCount} of {steps.length} done.
+              </span>
+            )}
           </p>
         </div>
         <AddStepDialog />
@@ -58,7 +67,13 @@ export default function App() {
       {steps && steps.length > 0 && (
         <ol className="grid list-none gap-4 p-0">
           {steps.map((step, i) => (
-            <StepCard key={step.id} step={step} index={i + 1} />
+            <StepCard
+              key={step.id}
+              step={step}
+              index={i + 1}
+              completed={completed.has(step.id)}
+              onToggleComplete={toggle}
+            />
           ))}
         </ol>
       )}
