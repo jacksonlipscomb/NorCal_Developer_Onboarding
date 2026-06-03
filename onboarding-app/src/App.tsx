@@ -87,6 +87,25 @@ export default function App() {
         </ol>
       )}
       </main>
+
+      <footer className="border-t border-slate-300 bg-norcal-gray">
+        <div className="mx-auto max-w-3xl px-4 py-8 text-center text-sm text-slate-600">
+          <p className="font-semibold text-slate-700">Norcal Crew</p>
+          <p className="mt-1">101 Westpoint Harbor Drive</p>
+          <p>Redwood City, CA 94063</p>
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=101+Westpoint+Harbor+Drive+Redwood+City+CA+94063"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-block font-medium text-norcal-gold-dark hover:underline"
+          >
+            Directions
+          </a>
+          <p className="mt-4 text-xs text-slate-500">
+            © {new Date().getFullYear()} Norcal Crew. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
