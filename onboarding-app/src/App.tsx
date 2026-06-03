@@ -97,7 +97,7 @@ export default function App() {
             href="https://www.google.com/maps/search/?api=1&query=101+Westpoint+Harbor+Drive+Redwood+City+CA+94063"
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-block font-medium text-norcal-gold-dark hover:underline"
+            className="mt-3 inline-block font-medium text-slate-700 underline decoration-norcal-gold decoration-2 underline-offset-2 hover:text-slate-900"
           >
             Directions
           </a>
