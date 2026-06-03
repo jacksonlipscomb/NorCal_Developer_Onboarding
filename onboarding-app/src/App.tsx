@@ -27,7 +27,8 @@ export default function App() {
             className="h-11 w-auto"
           />
           <span className="text-xl font-bold tracking-tight text-white">
-            NorCal <span className="text-norcal-gold">Developer Onboarding</span>
+            NorCal{" "}
+            <span className="text-norcal-gold">Developer Onboarding</span>
           </span>
         </div>
       </header>
@@ -47,45 +48,45 @@ export default function App() {
 
         {isPending && <SkeletonList />}
 
-      {isError && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-6 text-center"
-        >
-          <p className="text-sm text-red-700">
-            Couldn’t load onboarding steps: {error.message}
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => refetch()}
+        {isError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 p-6 text-center"
           >
-            Retry
-          </Button>
-        </div>
-      )}
+            <p className="text-sm text-red-700">
+              Couldn’t load onboarding steps: {error.message}
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => refetch()}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
 
-      {steps && steps.length === 0 && (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-sm text-slate-500">
-            No onboarding steps yet. Add the first one to get started.
-          </p>
-        </div>
-      )}
+        {steps && steps.length === 0 && (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
+            <p className="text-sm text-slate-500">
+              No onboarding steps yet. Add the first one to get started.
+            </p>
+          </div>
+        )}
 
-      {steps && steps.length > 0 && (
-        <ol className="grid list-none gap-4 p-0">
-          {steps.map((step, i) => (
-            <StepCard
-              key={step.id}
-              step={step}
-              index={i + 1}
-              completed={completed.has(step.id)}
-              onToggleComplete={toggle}
-            />
-          ))}
-        </ol>
-      )}
+        {steps && steps.length > 0 && (
+          <ol className="grid list-none gap-4 p-0">
+            {steps.map((step, i) => (
+              <StepCard
+                key={step.id}
+                step={step}
+                index={i + 1}
+                completed={completed.has(step.id)}
+                onToggleComplete={toggle}
+              />
+            ))}
+          </ol>
+        )}
       </main>
 
       <footer className="border-t border-slate-300 bg-norcal-gray">
