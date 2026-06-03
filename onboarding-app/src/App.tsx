@@ -20,7 +20,12 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-norcal-black">
-        <div className="mx-auto flex max-w-3xl items-center px-4 py-5">
+        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
+          <img
+            src="/norcal-crew-logo.png"
+            alt="NorCal Crew"
+            className="h-11 w-auto"
+          />
           <span className="text-xl font-bold tracking-tight text-white">
             NorCal <span className="text-norcal-gold">Developer Onboarding</span>
           </span>
