@@ -18,25 +18,29 @@ export default function App() {
   const doneCount = steps?.filter((s) => completed.has(s.id)).length ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            NorCal Developer Onboarding
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+    <div className="flex min-h-screen flex-col">
+      <header className="bg-norcal-black">
+        <div className="mx-auto flex max-w-3xl items-center px-4 py-5">
+          <span className="text-xl font-bold tracking-tight text-white">
+            NorCal <span className="text-norcal-gold">Developer Onboarding</span>
+          </span>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-slate-600">
             Follow these steps to get set up.
             {steps && steps.length > 0 && (
-              <span className="ml-1 font-medium text-slate-600">
+              <span className="ml-1 font-medium text-slate-700">
                 {doneCount} of {steps.length} done.
               </span>
             )}
           </p>
+          <AddStepDialog />
         </div>
-        <AddStepDialog />
-      </header>
 
-      {isPending && <SkeletonList />}
+        {isPending && <SkeletonList />}
 
       {isError && (
         <div
@@ -77,6 +81,7 @@ export default function App() {
           ))}
         </ol>
       )}
+      </main>
     </div>
   );
 }
