@@ -1,8 +1,9 @@
 # NorCal Developer Onboarding
 
 A lightweight internal web app showing new NorCal developers step-by-step onboarding
-instructions. Steps can be added, edited, and soft-deleted (records are preserved, not
-hard-deleted).
+instructions. Steps can be added and soft-deleted (records are preserved, not
+hard-deleted), and each visitor can check off their own progress (stored locally in the
+browser). Editing remains available on the API (`PATCH /api/steps/:id`) but has no UI.
 
 ## Architecture (three layers)
 
@@ -26,12 +27,12 @@ Access (per-user email OTP) remains an optional future upgrade.
 
 ## API
 
-| Method | Path             | Purpose                                  |
-| ------ | ---------------- | ---------------------------------------- |
-| GET    | `/api/steps`     | List active steps, ordered               |
-| POST   | `/api/steps`     | Add a step (`{ title, body }`)           |
-| PATCH  | `/api/steps/:id` | Edit a step (`{ title?, body? }`)        |
-| DELETE | `/api/steps/:id` | Soft-delete a step (sets `deleted_at`)   |
+| Method | Path             | Purpose                                             |
+| ------ | ---------------- | --------------------------------------------------- |
+| GET    | `/api/steps`     | List active steps, ordered                          |
+| POST   | `/api/steps`     | Add a step (`{ title, body }`)                      |
+| PATCH  | `/api/steps/:id` | Edit a step (`{ title?, body? }`) — API only, no UI |
+| DELETE | `/api/steps/:id` | Soft-delete a step (sets `deleted_at`)              |
 
 Unhandled methods return a structured `405` with an `Allow` header. Every response the app
 produces (2xx/4xx) carries an `x-request-id` header, and each request logs one structured
@@ -74,7 +75,7 @@ an error propagates, so they do **not** carry `x-request-id` — but the structu
 ```bash
 npm run typecheck    # tsc -b across app + functions
 npm run lint         # eslint
-npm test             # vitest — validation + respond/logging unit tests
+npm test             # vitest — validation, respond/logging, auth, and check-off unit tests
 npm run build        # tsc -b && vite build → dist/
 ```
 
@@ -142,13 +143,20 @@ functions/
   api/
     steps.ts        GET + POST (+ 405 fallback)
     steps/[id].ts   PATCH + DELETE (+ 405 fallback)
+public/
+  norcal-crew-logo.png  NorCal Crew brand logo (shown in the header)
 src/
   data/types.ts     OnboardingStep type + field length limits (shared with functions)
-  lib/              api client, cn() util
-  components/        StepCard, Add/Edit/ConfirmDelete dialogs, StepForm, ui/ primitives
-  App.tsx           single page: loading / error / empty / list states
+  hooks/            useCompletedSteps (per-browser check-off via localStorage)
+  lib/              api client, completion (check-off helpers), cn() util
+  components/        StepCard, Add/ConfirmDelete dialogs, StepForm, ui/ primitives
+  App.tsx           single page: branded header + footer; loading / error / empty / list states
 supabase/
   migrations/   0001_create_onboarding_steps.sql
   seed.sql      idempotent 8-step seed
   tests/        pgTAP DB contract tests
+  updates/      one-time content-revision SQL applied to live data
+scripts/
+  backup.sh     supabase db dump helper (see BACKUPS.md)
+BACKUPS.md      backup modes + restore runbook
 ```
