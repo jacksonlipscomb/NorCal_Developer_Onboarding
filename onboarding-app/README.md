@@ -155,4 +155,8 @@ supabase/
   migrations/   0001_create_onboarding_steps.sql
   seed.sql      idempotent 8-step seed
   tests/        pgTAP DB contract tests
+  updates/      one-time content-revision SQL applied to live data
+scripts/
+  backup.sh     supabase db dump helper (see BACKUPS.md)
+BACKUPS.md      backup modes + restore runbook
 ```
