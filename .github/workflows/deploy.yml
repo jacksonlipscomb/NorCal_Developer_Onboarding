@@ -1,0 +1,98 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Serialize production deploys. A running deploy finishes; a newer push queues
+# behind it (older pending runs are superseded), so the newest commit wins and
+# two pushes never upload to production at the same time.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Scope the Cloudflare deploy credentials to a protected GitHub environment.
+    # The token/account ID are stored as *environment* secrets on `production`,
+    # so they are only exposed to runs that reference this environment, and any
+    # protection/approval rules on it gate the deploy.
+    environment: production
+    defaults:
+      run:
+        working-directory: onboarding-app
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: onboarding-app/package-lock.json
+
+      - name: Install dependencies (clean, from lockfile)
+        run: npm ci
+
+      # Re-run the full quality gates here so a direct push to main (which never
+      # triggers PR CI) cannot reach production unverified. pages:deploy only
+      # typechecks + builds; lint and test would otherwise be skipped.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # Tag the deployment with the exact commit SHA so the verification step can
+      # assert *this* commit became production. npm forwards the `--` args to the end
+      # of the script, i.e. onto the `wrangler pages deploy …` invocation.
+      - name: Build and deploy to Cloudflare Pages
+        run: npm run pages:deploy -- --commit-hash "$GITHUB_SHA"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Prove *this commit* became the production (canonical) deployment by matching the
+      # SHA we tagged the upload with — not a freshness heuristic (a concurrent/manual
+      # deploy could be fresh too). Retries absorb canonical-flip propagation; --fail-with-body
+      # turns an auth/API error into a loud failure instead of feeding jq an error body.
+      - name: Verify the canonical production deployment is this commit
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/norcal-onboarding"
+          for attempt in 1 2 3 4 5; do
+            body=$(curl -s --fail-with-body --connect-timeout 5 --max-time 15 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api") || {
+              echo "Attempt $attempt: API request failed: $body"; sleep 10; continue; }
+            actual=$(echo "$body" | jq -r '.result.canonical_deployment.deployment_trigger.metadata.commit_hash')
+            echo "Attempt $attempt: canonical commit_hash=$actual want=$GITHUB_SHA"
+            if [ "$actual" = "$GITHUB_SHA" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::Canonical production deployment is not this commit ($GITHUB_SHA). Last: ${actual:-none}"
+          exit 1
+
+      # Availability check (not revision identity): the fail-closed Basic Auth gate must
+      # answer 401 to an unauthenticated request, proving the production gate is live.
+      # Retries absorb the brief production-alias propagation delay.
+      - name: Verify the production gate is live (expects 401)
+        run: |
+          url="https://norcal-onboarding.pages.dev"
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 15 "$url" || true)
+            echo "Attempt $attempt: $url -> HTTP ${code:-000}"
+            if [ "$code" = "401" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::Production gate did not return 401. Last code: ${code:-000}"
+          exit 1
