@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
+    "test:rls": "vitest run --config vitest.integration.config.ts",
     "pages:dev": "npm run build && wrangler pages dev dist",
     "pages:deploy": "npm run build && wrangler pages deploy dist --project-name norcal-onboarding --branch main",
     "db:start": "supabase start",
