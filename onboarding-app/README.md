@@ -1,9 +1,9 @@
 # NorCal Developer Onboarding
 
 A lightweight internal web app where each NorCal developer signs in with email/password and
-manages **their own** step-by-step onboarding list. Steps can be added and soft-deleted
-(records are preserved, not hard-deleted), and each user checks off their own progress
-(stored per-user in the browser).
+manages **their own** step-by-step onboarding list. Steps can be added and soft-deleted (the
+UI hides a step by setting `deleted_at` rather than removing the row), and each user checks off
+their own progress (stored per-user in the browser).
 
 ## Architecture (two layers)
 
@@ -27,6 +27,13 @@ browser sends the user's JWT to PostgREST with every request, and **row-level se
   [`tests/rls.owner.integration.test.ts`](tests/rls.owner.integration.test.ts).
 - The service-role key (which bypasses RLS) is **not** used by the app — only by test fixtures
   and maintenance.
+
+**Delete semantics / contract:** the UI deletes by _soft delete_ (sets `deleted_at`), but
+owners hold direct `UPDATE`/`DELETE` privileges on their own rows, so a direct PostgREST client
+can also **hard-delete** a row or **restore** a soft-deleted one. RLS limits _which rows_ an
+owner can touch, not _which columns or operations_ — so the "records are always preserved"
+guarantee is no longer absolute. Constraining deletes to a `security definer` `soft_delete_step`
+RPC (and column-scoping updates) is a documented future hardening.
 
 ### Sign-up eligibility gate (required before any public deploy)
 
@@ -114,6 +121,11 @@ time, the build environment — your shell for a manual deploy, or the CI/CD job
 `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (public values), or the bundle ships `undefined`.
 The app's data protection lives in Supabase (RLS + the sign-up hook + email confirmation), not in
 any deploy-time secret.
+
+> **Do not deploy production from this branch alone.** Wiring `VITE_SUPABASE_*` into the CD build
+> environment (and the deploy smoke check) is a separate follow-up tied to the CD workflow
+> (`deploy.yml`); without it the deployed bundle ships with `undefined` Supabase config. Merge this
+> branch as app/schema work, but gate the production deploy on that follow-up.
 
 ### Backups
 
