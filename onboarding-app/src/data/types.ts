@@ -2,6 +2,7 @@
 // edge functions. Mirrors the `onboarding_steps` table columns exactly.
 export interface OnboardingStep {
   id: string;
+  user_id: string; // owner (auth.users.id); enforced by RLS — see migration 0002
   position: number;
   title: string;
   body: string;

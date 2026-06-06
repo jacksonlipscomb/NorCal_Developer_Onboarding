@@ -25,12 +25,4 @@ export default tseslint.config(
       ],
     },
   },
-  {
-    files: ["functions/**/*.ts"],
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    languageOptions: {
-      ecmaVersion: 2022,
-      globals: globals.worker,
-    },
-  },
 );
