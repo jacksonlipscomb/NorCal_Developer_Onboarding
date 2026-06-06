@@ -14,3 +14,11 @@ port = 54321
 schemas = ["public"]
 extra_search_path = ["public"]
 max_rows = 1000
+
+# Enforced sign-up eligibility gate. The Postgres function (migration 0004) rejects
+# sign-ups outside the approved email domain. Local only here; configure the same hook in
+# the dashboard / Management API for production. Production email confirmation is also set
+# there (not in this file) — see README.
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/restrict_signup_domain"
