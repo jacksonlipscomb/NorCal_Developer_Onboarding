@@ -1,8 +1,13 @@
-// Per-browser step completion. There is no per-user login, so each visitor tracks
-// their own progress in localStorage — one person's checks never affect another's.
-// Pure helpers here; the React hook wraps them in useCompletedSteps.
+// Per-user step completion, persisted to localStorage. The storage key is namespaced by
+// the signed-in user id so two accounts on the same browser never see each other's
+// check-offs. Pure helpers here; the React hook wraps them in useCompletedSteps.
 
-export const COMPLETION_KEY = "norcal-onboarding-completed-v1";
+const COMPLETION_KEY_PREFIX = "norcal-onboarding-completed-v1";
+
+/** localStorage key for a given user's check-offs. */
+export function completionKey(userId: string): string {
+  return `${COMPLETION_KEY_PREFIX}:${userId}`;
+}
 
 /** Parse the stored value into a clean list of step ids (tolerant of junk). */
 export function parseCompleted(raw: string | null): string[] {
