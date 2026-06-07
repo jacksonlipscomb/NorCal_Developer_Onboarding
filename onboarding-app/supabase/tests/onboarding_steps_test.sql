@@ -85,6 +85,12 @@ insert into auth.users (
    '22222222-2222-2222-2222-222222222222', 'authenticated', 'authenticated',
    'b@norcalcrew.org', 'x', now(), now(), now());
 
+-- The seeding trigger (0005) gives each new user 8 steps; clear them so the RLS counts
+-- below reflect only the explicit fixtures.
+delete from onboarding_steps
+  where user_id in ('11111111-1111-1111-1111-111111111111',
+                    '22222222-2222-2222-2222-222222222222');
+
 insert into onboarding_steps (user_id, title, body) values
   ('11111111-1111-1111-1111-111111111111', 'A-step-1', 'b'),
   ('11111111-1111-1111-1111-111111111111', 'A-step-2', 'b'),
