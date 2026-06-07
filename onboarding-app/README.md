@@ -110,6 +110,40 @@ destructive. The seed is idempotent (it only loads when the table is empty), so
 2. In the Cloudflare Pages project settings, add **three** encrypted environment variables
    (Production): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SITE_BASIC_AUTH`.
 
+### Continuous deployment (push to main)
+
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) deploys automatically:
+a push to `main` re-runs the quality gates (typecheck/lint/test), then runs
+`npm run pages:deploy` to build and ship the SPA + Pages Functions to Cloudflare Pages.
+CI (`ci.yml`) runs on pull requests; CD runs on push to `main` — no overlap. The manual
+`npm run pages:deploy` above still works as a fallback.
+
+**Two sets of secrets, in two places — they never mix:**
+
+- **GitHub** (deploy credentials only) — stored as **environment** secrets on a protected
+  `production` environment (Settings → Environments → `production`, deployment branch
+  restricted to `main`):
+  - `CLOUDFLARE_API_TOKEN` — token scoped to **Account · Cloudflare Pages · Edit**.
+  - `CLOUDFLARE_ACCOUNT_ID` — the target Cloudflare account.
+- **Cloudflare Pages project** (app runtime secrets) — `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `SITE_BASIC_AUTH` (per step 2 above). These persist across
+  deploys; `wrangler pages deploy` never touches them, and they are **never** added to
+  GitHub.
+
+**Production branch:** `--branch main` deploys to production only when the project's
+production branch is `main`. For a Direct Upload project this is inspected/set via the
+Pages API (`GET`/`PATCH …/pages/projects/norcal-onboarding`), not the dashboard.
+
+**Post-deploy verification (in the workflow):** after upload, CD asserts the project's
+canonical deployment is _exactly this commit_ (`--commit-hash $GITHUB_SHA` matched against
+the Pages API), then that the fail-closed gate answers `401` (the gate is live). The
+authenticated end-to-end check (log in, see steps) stays manual.
+
+**Rollback:** Cloudflare Pages keeps every deployment — Pages → norcal-onboarding →
+Deployments → pick the last-good one → **Rollback to this deployment** (or
+`npx wrangler pages deployment list` to find it). A forward-fix is to revert the offending
+commit on `main`, which triggers a fresh CD deploy.
+
 ### Required gate before sharing the URL — Basic Auth
 
 The production URL **must not be shared** until the gate is live. The gate is the
