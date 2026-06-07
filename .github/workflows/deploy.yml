@@ -52,6 +52,17 @@ jobs:
       - name: Test
         run: npm test
 
+      # The SPA reads these PUBLIC values at BUILD time (Vite inlines them). They come from
+      # GitHub Actions *variables* (not secrets). Fail fast with a clear message if missing —
+      # otherwise the build silently ships `undefined` Supabase config.
+      - name: Require Vite Supabase build env
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          : "${VITE_SUPABASE_URL:?Set the VITE_SUPABASE_URL Actions variable (production Supabase URL)}"
+          : "${VITE_SUPABASE_ANON_KEY:?Set the VITE_SUPABASE_ANON_KEY Actions variable (production anon key)}"
+
       # Tag the deployment with the exact commit SHA so the verification step can
       # assert *this* commit became production. npm forwards the `--` args to the end
       # of the script, i.e. onto the `wrangler pages deploy …` invocation.
@@ -60,6 +71,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+
+      # Prove the public Supabase config actually embedded in the built bundle (Vite inlines
+      # the URL as a string literal). Catches a missing/empty variable that would otherwise
+      # ship `undefined` and fail only in the user's browser.
+      - name: Verify Supabase config baked into the bundle
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+        run: |
+          grep -rqF "$VITE_SUPABASE_URL" dist/assets \
+            || { echo "::error::Built bundle does not contain VITE_SUPABASE_URL — env not embedded at build time."; exit 1; }
 
       # Prove *this commit* became the production (canonical) deployment by matching the
       # SHA we tagged the upload with — not a freshness heuristic (a concurrent/manual
@@ -83,17 +106,19 @@ jobs:
           echo "::error::Canonical production deployment is not this commit ($GITHUB_SHA). Last: ${actual:-none}"
           exit 1
 
-      # Availability check (not revision identity): the fail-closed Basic Auth gate must
-      # answer 401 to an unauthenticated request, proving the production gate is live.
-      # Retries absorb the brief production-alias propagation delay.
-      - name: Verify the production gate is live (expects 401)
+      # Availability check: the SPA shell is now public (auth is per-user via Supabase, not a
+      # site-wide gate), so the site should answer 200. This confirms reachability; the
+      # bundle-bake check above already proves the Supabase env embedded. Verifying the login
+      # screen actually renders / Supabase initializes without error is a manual post-deploy
+      # step (CI has no browser).
+      - name: Verify the site is reachable (expects 200)
         run: |
           url="https://norcal-onboarding.pages.dev"
           for attempt in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 15 "$url" || true)
             echo "Attempt $attempt: $url -> HTTP ${code:-000}"
-            if [ "$code" = "401" ]; then exit 0; fi
+            if [ "$code" = "200" ]; then exit 0; fi
             sleep 10
           done
-          echo "::error::Production gate did not return 401. Last code: ${code:-000}"
+          echo "::error::Production site did not return 200. Last code: ${code:-000}"
           exit 1

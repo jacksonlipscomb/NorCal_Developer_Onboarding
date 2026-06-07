@@ -122,10 +122,15 @@ time, the build environment — your shell for a manual deploy, or the CI/CD job
 The app's data protection lives in Supabase (RLS + the sign-up hook + email confirmation), not in
 any deploy-time secret.
 
-> **Do not deploy production from this branch alone.** Wiring `VITE_SUPABASE_*` into the CD build
-> environment (and the deploy smoke check) is a separate follow-up tied to the CD workflow
-> (`deploy.yml`); without it the deployed bundle ships with `undefined` Supabase config. Merge this
-> branch as app/schema work, but gate the production deploy on that follow-up.
+Deployment is automated: a push to `main` runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml),
+which injects `VITE_SUPABASE_*` from GitHub **Actions variables**, builds, deploys to Cloudflare
+Pages, verifies the canonical deployment is the pushed commit and that the bundle embedded the
+Supabase URL, and checks the site is reachable (200).
+
+> **Before the first production deploy of this app, complete the one-time prerequisites:** set the
+> `VITE_SUPABASE_*` Actions variables, and provision the production Supabase project (`db push` for
+> migrations `0002`/`0004`, register the Before User Created hook, enable email confirmation). The
+> deploy guards fail loudly if the Vite variables are missing.
 
 ### Backups
 
