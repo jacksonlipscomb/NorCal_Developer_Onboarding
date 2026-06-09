@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { StepCard } from "@/components/StepCard";
 import { AddStepDialog } from "@/components/AddStepDialog";
@@ -87,6 +88,36 @@ function Steps({ userId }: { userId: string }) {
 
   const { completed, toggle } = useCompletedSteps(userId);
   const doneCount = steps?.filter((s) => completed.has(s.id)).length ?? 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        const stepCheckboxes = Array.from(
+          document.querySelectorAll('[role="checkbox"]')
+        ) as HTMLElement[];
+        const activeElement = document.activeElement;
+
+        if (stepCheckboxes.length === 0) return;
+
+        let currentIndex = stepCheckboxes.indexOf(
+          activeElement as HTMLElement
+        );
+        if (currentIndex === -1) currentIndex = 0;
+
+        if (e.key === "ArrowDown") {
+          currentIndex = Math.min(currentIndex + 1, stepCheckboxes.length - 1);
+        } else {
+          currentIndex = Math.max(currentIndex - 1, 0);
+        }
+
+        e.preventDefault();
+        stepCheckboxes[currentIndex].focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <>
