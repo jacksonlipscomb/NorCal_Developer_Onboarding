@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { StepCard } from "@/components/StepCard";
 import { AddStepDialog } from "@/components/AddStepDialog";
 import { AuthScreen } from "@/components/AuthScreen";
+import { RecentCommits } from "@/components/RecentCommits";
 import { useCompletedSteps } from "@/hooks/useCompletedSteps";
 import { useAuth } from "@/auth/context";
 import { listSteps } from "@/lib/api";
@@ -139,6 +140,8 @@ function Steps({ userId }: { userId: string }) {
           ))}
         </ol>
       )}
+
+      <RecentCommits />
     </>
   );
 }
