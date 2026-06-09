@@ -57,3 +57,8 @@ skill carries the proactive checklist when authoring one.
   rollback — unless the current phase spec explicitly requires recovery
   behavior. Let unexpected errors propagate; precheck expected failures and
   surface them inline.
+
+## Plan mode structure
+
+- Always name your plans appropriately depending on task at hand
+- Always create a new branch for a feature immediately after exiting plan mode
