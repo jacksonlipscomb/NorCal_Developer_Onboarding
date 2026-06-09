@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(20);
 
 -- ── Structure ──────────────────────────────────────────────────────────────
 select has_table('public', 'onboarding_steps', 'onboarding_steps table exists');
@@ -96,6 +96,11 @@ insert into onboarding_steps (user_id, title, body) values
   ('11111111-1111-1111-1111-111111111111', 'A-step-2', 'b'),
   ('22222222-2222-2222-2222-222222222222', 'B-step-1', 'b');
 
+-- A soft-deleted row owned by A. The select policy is `auth.uid() = user_id AND deleted_at is
+-- null`, so A must NOT see this even though A owns it (negative test below).
+insert into onboarding_steps (user_id, title, body, deleted_at) values
+  ('11111111-1111-1111-1111-111111111111', 'A-deleted', 'b', now());
+
 -- anon: has SELECT privilege but NO policy → zero rows even though rows exist.
 set local role anon;
 select is(
@@ -109,10 +114,20 @@ reset role;
 set local "request.jwt.claims" = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
 set local role authenticated;
 
+-- Prove the role switch took effect, so a "pass" below reflects RLS, not a superuser bypass.
+select is(current_user, 'authenticated', 'role switched to authenticated before RLS checks');
+
 select is(
   (select count(*) from onboarding_steps),
   2::bigint,
   'owner A sees only their own two rows'
+);
+-- Negative: the select policy's `deleted_at is null` clause hides an owner's own soft-deleted
+-- row even from that owner (A owns 'A-deleted' but cannot see it).
+select is(
+  (select count(*) from onboarding_steps where title = 'A-deleted'),
+  0::bigint,
+  'owner A cannot see their own soft-deleted row (select policy filters deleted_at)'
 );
 select throws_ok(
   $$ insert into onboarding_steps (user_id, title, body)
